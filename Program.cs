@@ -1,8 +1,7 @@
 ﻿using System.Data;
-using System.Reflection;
+using System.Text.Encodings.Web;
 using System.Text.Json;
-using Excel = Microsoft.Office.Interop.Excel;
-
+using System.Xml.Serialization;
 
 namespace DeserializeFromFile
 {
@@ -62,6 +61,7 @@ namespace DeserializeFromFile
         public string? Id { get; set; }
         public string? Key { get; set; }
         public string? Summary { get; set; }
+        public string? Sprint { get; set; }
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 
@@ -69,79 +69,105 @@ namespace DeserializeFromFile
     {
         public string? UserKey { get; set; }
         public string? UserName { get; set; }
-        public DateTime? DateChangeStatus { get; set; }
+        public string? DateChangeStatus { get; set; }
+        public int CycleTime { get; set; }
+        public int CycleTimeWorkDays { get; set; }
         public string? FromStatus { get; set; }
         public string? ToStatus { get; set; }
     }
 
-
+    
     public class Program
     {
         public static void Main()
         {
-            var fileName = "C:\\MSProjects\\AnaSeTeJson\\EstoriasAnaSeTe.json";
-            var jsonString = File.ReadAllText(fileName);
-
-            var anaSete = JsonSerializer.Deserialize<AnaSete>(jsonString);
-
-            if (anaSete == null || anaSete.issues == null)
-                throw new Exception("Objects is null");
-
-            var issuesResultList = GetIssuesResult(anaSete);
-
-            foreach (var itemsResult in issuesResultList)
+            try
             {
-                Console.WriteLine($"Id: {itemsResult?.Id}");
-                Console.WriteLine($"Key: {itemsResult?.Key}");
-                Console.WriteLine($"Summary: {itemsResult?.Summary}");
-                
-                if (itemsResult == null)
-                    continue;
+                var baseDirecotry = AppDomain.CurrentDomain.BaseDirectory;
+                var fileNameSource = baseDirecotry + "SourceEstoriasJiraAPI.json";
+                var fileNameJsonClose = baseDirecotry + "EstoriasTransactionsFormatterJSON.json";
+                var fileNameXmlClose = baseDirecotry + "EstoriasTransactionsFormatterXML.xml";
 
-                foreach (var itemsResultHistories in itemsResult.IssuesResultHistories)
+                Console.WriteLine("Carregando arquivo json de origem...");
+                Console.WriteLine();
+                var jsonString = File.ReadAllText(fileNameSource);
+
+                var anaSete = JsonSerializer.Deserialize<AnaSete>(jsonString);
+
+                if (anaSete == null || anaSete.issues == null)
+                    throw new Exception("Objects is null");
+
+                Console.WriteLine("Preparando históricos das estórias...");
+                Console.WriteLine();
+                var issuesResultList = GetIssuesResult(anaSete).Where(x => x.IssuesResultHistories.Count() > 0).OrderBy(x => x.Sprint);
+
+                var jsonSerializerOptions = new JsonSerializerOptions
                 {
-                    Console.WriteLine($"User Key: {itemsResultHistories?.UserKey}");
-                    Console.WriteLine($"User Name: {itemsResultHistories?.UserName}");
-                    Console.WriteLine($"Date Change Status: {itemsResultHistories?.DateChangeStatus}");
-                    Console.WriteLine($"From Status: {itemsResultHistories?.FromStatus}");
-                    Console.WriteLine($"To Status: {itemsResultHistories?.ToStatus}");
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                    WriteIndented = true,
+                };
+                            
+                Console.WriteLine("Salvando arquivos json/xml com históricos de estórias formatadas...");
+                Console.WriteLine();
+                var issuesResultListJson = JsonSerializer.Serialize(issuesResultList, jsonSerializerOptions);
+                File.WriteAllText(fileNameJsonClose, issuesResultListJson);
 
-                    Console.WriteLine();
-                }
+                var streamFileXml = new FileStream(fileNameXmlClose, FileMode.Create);
+                            
+                var issuesResultListXml = new XmlSerializer(issuesResultList.ToList().GetType());
+                issuesResultListXml.Serialize(streamFileXml, issuesResultList.ToList());
+                streamFileXml.Close();
+    
+                Console.WriteLine();
+                Console.WriteLine("Seus arquivos estão pronto para uso, pressione qualquer tecla para sair do app!!!");
+                Console.ReadLine();
             }
-
-            var dataTable = ToDataTable(issuesResultList);
-
-            GenerateExcel(dataTable);
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex.Message);
+                Console.ReadLine();
+            }
+ 
         }
 
         private static List<IssuesResult> GetIssuesResult(AnaSete anaSete)
         {
             var issuesResultList = new List<IssuesResult>();  
 
-            foreach(var itemIssues in anaSete.issues.Where(x => x.key == "ANAEXPRES-104"))
+            foreach(var itemIssues in anaSete.issues.OrderBy(x => x.id))
             {
                 var issuesResult = new IssuesResult
                 {
                     Id = itemIssues?.id,
                     Key = itemIssues?.key,
-                    Summary = itemIssues?.fields?.summary
+                    Summary = itemIssues?.fields?.summary,
                 };
 
                 if (itemIssues == null)
                     continue;
 
+
+                string dateChangeStatusOld = "0";
                 foreach(var itemHistories in itemIssues.changelog.histories.OrderBy(x => x.created))
                 {
+                    if (string.IsNullOrEmpty(issuesResult.Sprint))
+                        issuesResult.Sprint = itemHistories?.items?.FirstOrDefault(x => x.field == "Sprint")?.toString;    
+
                     var itemsStatus = itemHistories?.items.Where(x => x.field == "status" && x.fromString != x.toString);
-                    if (itemsStatus == null || !itemsStatus.Any())
+                    if (itemsStatus == null || itemsStatus.Count() == 0)
                         continue;
 
+                    var dateChangeStatus = DateTime.SpecifyKind(Convert.ToDateTime(itemHistories?.created), DateTimeKind.Utc);
+                    var dateFrom = (dateChangeStatusOld != "0") ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
+                    var dateTo = Convert.ToDateTime(dateChangeStatus.ToString("yyyy-MM-dd"));
+            
                     var issuesResultHistories = new IssuesResultHistories
                     {
                         UserKey = itemHistories?.author?.name,
                         UserName = itemHistories?.author?.displayName,
-                        DateChangeStatus = Convert.ToDateTime(itemHistories?.created),
+                        DateChangeStatus = dateChangeStatus.ToString("yyyy-MM-dd"),
+                        CycleTime = (dateFrom != DateTime.MinValue) ? (int)dateTo.Subtract(dateFrom).TotalDays : 0,
+                        CycleTimeWorkDays = (dateFrom != DateTime.MinValue) ? GetWorkingDays(dateFrom, dateTo) : 0
                     };
 
                     foreach (var items in itemsStatus)
@@ -151,80 +177,22 @@ namespace DeserializeFromFile
                     }
 
                     issuesResult.IssuesResultHistories.Add(issuesResultHistories);
+                        
+                    dateChangeStatusOld = dateChangeStatus.ToString("yyyy-MM-dd");
+
                 }
                 issuesResultList.Add(issuesResult);
             }
             return issuesResultList;
-        }  
+        }
 
-        private static DataTable ToDataTable(List<IssuesResult> issuesResult)
+        private static int GetWorkingDays(DateTime dateFrom, DateTime dateTo)
         {
-            // Creating a data table instance and typed it as our incoming model as I make it generic, if you want, you can make it the model typed you want.            
-            DataTable dataTable  = new DataTable(typeof(IssuesResult).Name);
-
-            //Get all the properties of that model
-            PropertyInfo[] Props = typeof(IssuesResult).GetProperties(BindingFlags.Public | BindingFlags.Instance);  
-            
-            //Get all the properties of that model adding Column name to our datatable 
-            foreach (PropertyInfo prop in Props)  
-            {  
-                //Setting column names as Property names    
-                dataTable.Columns.Add(prop.Name);  
-            }
-
-            // Adding Row and its value to our dataTable  
-            foreach (var itemIssuesResult in issuesResult)  
-            {  
-                var values = new object[Props.Length];  
-
-                // Inserting property values to datatable rows 
-                for (int i = 0; i < Props.Length; i++)  
-                    values[i] = Props[i].GetValue(itemIssuesResult, null);  
-                
-                // Finally add value to datatable  
-                dataTable.Rows.Add(values);  
-            }  
-            return dataTable;  
-        }        
-
-        public static void GenerateExcel(DataTable dataTable)  
-        {  
-            var pathFileName = "C:\\MSProjects\\AnaSeTeJson\\EstoriasAnaSeTe.xlsx";
-
-            DataSet dataSet = new DataSet();  
-            dataSet.Tables.Add(dataTable);  
-        
-            // Create a excel app along side with workbook and worksheet and give a name to it  
-            Excel.Application excelApp = new Excel.Application();  
-            Excel.Workbook excelWorkBook = excelApp.Workbooks.Add();  
-            Excel._Worksheet xlWorksheet = (Excel._Worksheet)excelWorkBook.Sheets[1];  
-            Excel.Range xlRange = xlWorksheet.UsedRange;  
-
-            foreach (DataTable table in dataSet.Tables)  
-            {  
-                //Add a new worksheet to workbook with the Datatable name  
-                Excel.Worksheet excelWorkSheet = (Excel.Worksheet)excelWorkBook.Sheets.Add();  
-                excelWorkSheet.Name = table.TableName;  
-        
-                // Add all the columns  
-                for (int i = 1; i < table.Columns.Count + 1; i++)  
-                {  
-                    excelWorkSheet.Cells[1, i] = table.Columns[i - 1].ColumnName;  
-                }  
-        
-                // Add all the rows  
-                for (int j = 0; j < table.Rows.Count; j++)  
-                {  
-                    for (int k = 0; k < table.Columns.Count; k++)  
-                    {  
-                        excelWorkSheet.Cells[j + 2, k + 1] = table.Rows[j].ItemArray[k].ToString();  
-                    }  
-                }  
-            }   
-
-            excelWorkBook.SaveAs(pathFileName);
-            excelWorkBook.Close();  
-            excelApp.Quit();        
+            var dayDifference = (int)dateTo.Subtract(dateFrom).TotalDays;
+            return Enumerable
+                    .Range(1, dayDifference)
+                    .Select(x => dateFrom.AddDays(x))
+                .Count(x => x.DayOfWeek != DayOfWeek.Saturday && x.DayOfWeek != DayOfWeek.Sunday);
         }
     }
 }
