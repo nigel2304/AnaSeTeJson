@@ -210,7 +210,8 @@ namespace DeserializeFromFile
                 var sprintsIssue = x.items.Where(x => x.field == "Sprint" && !string.IsNullOrEmpty(x.toString)).ToList();
                 sprintsIssue.ForEach(x => 
                 {
-                    sprintList.Add(x.toString);
+                    if (sprintList.IndexOf(x.toString) == -1)   
+                        sprintList.Add(x.toString);
                 });
             });
 
