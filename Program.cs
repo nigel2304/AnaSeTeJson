@@ -62,6 +62,8 @@ namespace DeserializeFromFile
         public string? Key { get; set; }
         public string? Summary { get; set; }
         public string? Sprint { get; set; }
+        public string? HistorySprint { get; set; }
+        public string? Replanning { get; set; }
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 
@@ -146,13 +148,18 @@ namespace DeserializeFromFile
                 if (itemIssues == null)
                     continue;
 
+                var itemIssuesChangelogHistories = itemIssues.changelog.histories.OrderBy(x => x.created);
+                var sprintList = GetSprintsIssues(itemIssuesChangelogHistories);
+                issuesResult.Sprint = sprintList?.LastOrDefault();    
+                issuesResult.Replanning = sprintList?.Count > 1 ? "Sim" : "Não";
+                sprintList?.ForEach(x => 
+                {
+                    issuesResult.HistorySprint = string.IsNullOrEmpty(issuesResult.HistorySprint) ? x : issuesResult.HistorySprint + " / " + x;
+                });
 
                 string dateChangeStatusOld = "0";
-                foreach(var itemHistories in itemIssues.changelog.histories.OrderBy(x => x.created))
+                foreach(var itemHistories in itemIssuesChangelogHistories)
                 {
-                    if (string.IsNullOrEmpty(issuesResult.Sprint))
-                        issuesResult.Sprint = itemHistories?.items?.FirstOrDefault(x => x.field == "Sprint")?.toString;    
-
                     var itemsStatus = itemHistories?.items.Where(x => x.field == "status" && x.fromString != x.toString);
                     if (itemsStatus == null || itemsStatus.Count() == 0)
                         continue;
@@ -193,6 +200,21 @@ namespace DeserializeFromFile
                     .Range(1, dayDifference)
                     .Select(x => dateFrom.AddDays(x))
                 .Count(x => x.DayOfWeek != DayOfWeek.Saturday && x.DayOfWeek != DayOfWeek.Sunday);
+        }
+
+        private static List<string> GetSprintsIssues(IOrderedEnumerable<Histories> itemIssuesChangelogHistories)
+        {
+            var sprintList = new List<string>();
+            itemIssuesChangelogHistories.ToList().ForEach(x =>
+            {
+                var sprintsIssue = x.items.Where(x => x.field == "Sprint" && !string.IsNullOrEmpty(x.toString)).ToList();
+                sprintsIssue.ForEach(x => 
+                {
+                    sprintList.Add(x.toString);
+                });
+            });
+
+            return sprintList;
         }
     }
 }
