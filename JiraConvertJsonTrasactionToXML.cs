@@ -4,10 +4,10 @@ using System.Text.Json;
 using System.Xml.Serialization;
 using static IssuesJiraModel;
 
-namespace DeserializeFromFile
+namespace JiraConvertJsonTrasactionToXML
 {
    
-    public class Program
+    public class JiraConvertJsonTrasactionToXML
     {
         public static void Main()
         {
