@@ -59,6 +59,7 @@ public class IssuesJiraModel
         public string? Sprint { get; set; }
         public string? HistorySprint { get; set; }
         public string? Replanning { get; set; }
+        public string? DateReplanning { get; set; }
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 
@@ -69,6 +70,9 @@ public class IssuesJiraModel
         public string? DateChangeStatus { get; set; }
         public int CycleTime { get; set; }
         public int CycleTimeWorkDays { get; set; }
+        public int CycleTimeAfterReplanning { get; set; }
+        public int CycleTimeWorkDaysAfterReplanning { get; set; }
+
         public string? FromStatus { get; set; }
         public string? ToStatus { get; set; }
     }
