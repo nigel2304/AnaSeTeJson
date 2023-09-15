@@ -43,7 +43,7 @@ public class FormatterIssuesJira
         if (replanning != _YES)
             return null;
 
-        var dateAndStatusReplanning = itemIssuesChangelogHistories.LastOrDefault(x => x.items.Any(x => x.field == _STATUS && x.fromString != _BACKLOG && x.fromString == x.toString));
+        var dateAndStatusReplanning = itemIssuesChangelogHistories.FirstOrDefault(x => x.items.Any(x => x.field == _STATUS && x.fromString != _BACKLOG && x.fromString == x.toString));
 
         var dateReplanning = dateAndStatusReplanning?.created;
         var statusReplanning = dateAndStatusReplanning?.items.LastOrDefault()?.toString;
