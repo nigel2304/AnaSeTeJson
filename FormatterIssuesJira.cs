@@ -57,14 +57,17 @@ public class FormatterIssuesJira
     public List<IssuesResult> GetIssuesResult(IssuesJira issuesJira)
     {
         var issuesResultList = new List<IssuesResult>();  
-
+    
         foreach(var itemIssues in issuesJira.issues.OrderBy(x => x.id))
         {
+            bool updateStoryPointFields = true;
+            
             var issuesResult = new IssuesResult
             {
                 Id = itemIssues?.id,
                 Key = itemIssues?.key,
                 Summary = itemIssues?.fields?.summary,
+                Assigned = itemIssues?.fields?.assignee?.displayName
             };
 
             if (itemIssues == null)
@@ -133,8 +136,11 @@ public class FormatterIssuesJira
                     issuesResultHistories.FromStatus = items.fromString;
                     issuesResultHistories.ToStatus = items.toString;
                 }
+                issuesResultHistories.StoryPoint = updateStoryPointFields ? itemIssues?.fields?.customfield_16701 : 0;
+                issuesResultHistories.StoryPointDone = updateStoryPointFields ? itemIssues?.fields?.customfield_16702 : 0;    
 
                 isUseDateAfterReplanning = dateAfterReplanning.HasValue && issuesResultHistories.ToStatus == statusAfterReplanning && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
+                updateStoryPointFields = false;
 
                 issuesResult.IssuesResultHistories.Add(issuesResultHistories);
 

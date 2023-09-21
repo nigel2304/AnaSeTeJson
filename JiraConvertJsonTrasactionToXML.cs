@@ -2,6 +2,7 @@
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Xml.Serialization;
+using Newtonsoft.Json;
 using static IssuesJiraModel;
 
 namespace JiraConvertJsonTrasactionToXML
@@ -22,7 +23,13 @@ namespace JiraConvertJsonTrasactionToXML
                 Console.WriteLine();
                 var jsonString = File.ReadAllText(fileNameSource);
 
-                var issuesJira = JsonSerializer.Deserialize<IssuesJira>(jsonString);
+                var jsonSerializerOptions = new JsonSerializerOptions
+                {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+                    WriteIndented = true,
+                };
+
+                var issuesJira = JsonConvert.DeserializeObject<IssuesJira>(jsonString);
 
                 if (issuesJira == null || issuesJira.issues == null)
                     throw new Exception("Objects is null");
@@ -31,15 +38,9 @@ namespace JiraConvertJsonTrasactionToXML
                 Console.WriteLine();
                 var issuesResultList = new FormatterIssuesJira().GetIssuesResult(issuesJira).Where(x => x.IssuesResultHistories.Count() > 0).OrderBy(x => x.Sprint);
 
-                var jsonSerializerOptions = new JsonSerializerOptions
-                {
-                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
-                    WriteIndented = true,
-                };
-                            
                 Console.WriteLine("Salvando arquivos json/xml com históricos de estórias formatadas...");
                 Console.WriteLine();
-                var issuesResultListJson = JsonSerializer.Serialize(issuesResultList, jsonSerializerOptions);
+                var issuesResultListJson = JsonConvert.SerializeObject(issuesResultList);
                 File.WriteAllText(fileNameJsonClose, issuesResultListJson);
 
                 var streamFileXml = new FileStream(fileNameXmlClose, FileMode.Create);

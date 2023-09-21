@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 public class IssuesJiraModel
 {
     public class IssuesJira
@@ -16,6 +19,14 @@ public class IssuesJiraModel
     public class Fields
     {
         public string? summary { get; set; }
+        public double? customfield_16701 { get; set; }
+        public double? customfield_16702 { get; set; }
+        public Assignee assignee { get; set; } = new Assignee();
+    }
+
+    public class Assignee
+    {
+        public string? displayName { get; set; }
     }
 
     public class Changelog
@@ -56,6 +67,7 @@ public class IssuesJiraModel
         public string? Id { get; set; }
         public string? Key { get; set; }
         public string? Summary { get; set; }
+         public string? Assigned { get; set; }
         public string? Sprint { get; set; }
         public string? HistorySprint { get; set; }
         public string? Replanning { get; set; }
@@ -67,12 +79,13 @@ public class IssuesJiraModel
     {
         public string? UserKey { get; set; }
         public string? UserName { get; set; }
+       public double? StoryPoint { get; set; }
+        public double? StoryPointDone { get; set; }        
         public string? DateChangeStatus { get; set; }
         public int CycleTime { get; set; }
         public int CycleTimeWorkDays { get; set; }
         public int CycleTimeAfterReplanning { get; set; }
         public int CycleTimeWorkDaysAfterReplanning { get; set; }
-
         public string? FromStatus { get; set; }
         public string? ToStatus { get; set; }
     }
