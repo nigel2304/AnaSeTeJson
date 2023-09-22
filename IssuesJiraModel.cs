@@ -1,6 +1,3 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
-
 public class IssuesJiraModel
 {
     public class IssuesJira
@@ -21,6 +18,7 @@ public class IssuesJiraModel
         public string? summary { get; set; }
         public double? customfield_16701 { get; set; }
         public double? customfield_16702 { get; set; }
+        public string? resolutiondate { get; set; }
         public Assignee assignee { get; set; } = new Assignee();
     }
 
@@ -72,6 +70,7 @@ public class IssuesJiraModel
         public string? HistorySprint { get; set; }
         public string? Replanning { get; set; }
         public string? DateReplanning { get; set; }
+        public string? DateResolved { get; set; }
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 

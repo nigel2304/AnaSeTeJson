@@ -67,7 +67,8 @@ public class FormatterIssuesJira
                 Id = itemIssues?.id,
                 Key = itemIssues?.key,
                 Summary = itemIssues?.fields?.summary,
-                Assigned = itemIssues?.fields?.assignee?.displayName
+                Assigned = itemIssues?.fields?.assignee?.displayName,
+                DateResolved = DateTime.SpecifyKind(Convert.ToDateTime(itemIssues?.fields?.resolutiondate), DateTimeKind.Utc).ToString(_FORMATDATE)
             };
 
             if (itemIssues == null)
