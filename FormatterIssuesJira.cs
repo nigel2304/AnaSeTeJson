@@ -7,6 +7,7 @@ public class FormatterIssuesJira
     const string _STATUS = "status";
     const string _SPRINT = "Sprint";
     const string _BACKLOG = "Backlog";
+    const string _DONE = "Finalizado";
     const string _FORMATDATE = "yyyy-MM-dd";
 
     // Return diff dates just work days
@@ -37,6 +38,16 @@ public class FormatterIssuesJira
         return sprintList;
     }
 
+    // Return CycleTime
+    private static int GetCycletime(DateTime dateFrom, DateTime dateTo, bool isWorkday = false)
+    {
+        int cycleTime = 0;        
+        if (dateFrom != DateTime.MinValue)
+            cycleTime = !isWorkday ? (int)dateTo.Subtract(dateFrom).TotalDays : GetWorkingDays(dateFrom, dateTo);
+
+       return cycleTime;
+    }
+
     // Return real date and status that issue developing in sprint
     private static Tuple<DateTime?, string>? GetDateAndStatusAfterReplanning(IOrderedEnumerable<Histories> itemIssuesChangelogHistories, string replanning)
     {
@@ -51,6 +62,43 @@ public class FormatterIssuesJira
         return (!string.IsNullOrEmpty(dateReplanning) && !string.IsNullOrEmpty(statusReplanning)) ? 
                         new Tuple<DateTime?, string>(DateTime.SpecifyKind(Convert.ToDateTime(dateReplanning), DateTimeKind.Utc), statusReplanning) 
                         : null;
+    }
+
+    //Create and build issues histories 
+    private static IssuesResultHistories GetIssuesResultHistories(Histories? itemHistories, IEnumerable<Items> itemsStatus, 
+            bool isUseDateAfterReplanning, DateTime? dateAfterReplanning, string? dateChangeStatusOld)
+    {
+        // Prepare dates to calculate cycletimes
+        var dateChangeStatus = DateTime.SpecifyKind(Convert.ToDateTime(itemHistories?.created), DateTimeKind.Utc);
+        var dateFrom = (!string.IsNullOrEmpty(dateChangeStatusOld)) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
+        var dateTo = Convert.ToDateTime(dateChangeStatus.ToString(_FORMATDATE));
+
+        var dateChangeStatusAfterReplanning = (isUseDateAfterReplanning && dateAfterReplanning.HasValue) ? dateAfterReplanning.Value : dateChangeStatus;
+        var dateToAfterReplanning = Convert.ToDateTime(dateChangeStatusAfterReplanning.ToString(_FORMATDATE));
+
+        //Set object to issues history and calculate cycletimes
+        var issuesResultHistories = new IssuesResultHistories
+        {
+
+            UserKey = itemHistories?.author?.name,
+            UserName = itemHistories?.author?.displayName,
+
+            DateChangeStatus = dateChangeStatus.ToString(_FORMATDATE),
+            CycleTime = GetCycletime(dateFrom, dateTo),
+            CycleTimeWorkDays = GetCycletime(dateFrom, dateTo, true),
+
+            CycleTimeAfterReplanning = GetCycletime(dateFrom, dateToAfterReplanning),
+            CycleTimeWorkDaysAfterReplanning = GetCycletime(dateFrom, dateToAfterReplanning, true),
+
+        };
+
+        foreach (var items in itemsStatus)
+        {
+            issuesResultHistories.FromStatus = items.fromString;
+            issuesResultHistories.ToStatus = items.toString;
+        }
+
+        return issuesResultHistories;
     }
 
     // Build object with history status
@@ -96,10 +144,16 @@ public class FormatterIssuesJira
             }
     
             bool isUseDateAfterReplanning = false;
-            string dateChangeStatusOld = "0";
+            string dateChangeStatusOld = string.Empty;
     
-            // Build history status issue and cycletimes
+            // Get history status issue
             var itemIssuesChangelogHistoriesFiltered = itemIssuesChangelogHistories.Where(x => x.items.Any(x => x.field == _STATUS && x.fromString != x.toString));
+            
+            // Get last history status open issue
+            var itemIssuesLastChangelogHistories = itemIssuesChangelogHistoriesFiltered.LastOrDefault(x => x.items.Any(x => x.field == _STATUS && x.fromString != x.toString))?
+                    .items.LastOrDefault(y => y.field == _STATUS && y.fromString != y.toString && y.toString != _DONE);
+
+            // Build history status issue and cycletimes
             foreach (var itemHistories in itemIssuesChangelogHistoriesFiltered)
             {
 
@@ -108,35 +162,10 @@ public class FormatterIssuesJira
                 if (itemsStatus == null || itemsStatus.Count() == 0)
                     continue;
 
-                // Prepare dates to calculate cycletimes
-                var dateChangeStatus = DateTime.SpecifyKind(Convert.ToDateTime(itemHistories?.created), DateTimeKind.Utc);
-                var dateFrom = (dateChangeStatusOld != "0") ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
-                var dateTo = Convert.ToDateTime(dateChangeStatus.ToString(_FORMATDATE));
+                var dateFrom = !string.IsNullOrEmpty(dateChangeStatusOld) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
 
-                var dateChangeStatusAfterReplanning = (isUseDateAfterReplanning && dateAfterReplanning.HasValue) ? dateAfterReplanning.Value : dateChangeStatus;
-                var dateToAfterReplanning = Convert.ToDateTime(dateChangeStatusAfterReplanning.ToString(_FORMATDATE));
-
-                //Set object to issues history and calculate cycletimes
-                var issuesResultHistories = new IssuesResultHistories
-                {
-
-                    UserKey = itemHistories?.author?.name,
-                    UserName = itemHistories?.author?.displayName,
-
-                    DateChangeStatus = dateChangeStatus.ToString(_FORMATDATE),
-                    CycleTime = (dateFrom != DateTime.MinValue) ? (int)dateTo.Subtract(dateFrom).TotalDays : 0,
-                    CycleTimeWorkDays = (dateFrom != DateTime.MinValue) ? GetWorkingDays(dateFrom, dateTo) : 0,
-
-                    CycleTimeAfterReplanning = (dateFrom != DateTime.MinValue) ? (int)dateToAfterReplanning.Subtract(dateFrom).TotalDays : 0,
-                    CycleTimeWorkDaysAfterReplanning = (dateFrom != DateTime.MinValue) ? GetWorkingDays(dateFrom, dateToAfterReplanning) : 0,
-
-                };
-
-                foreach (var items in itemsStatus)
-                {
-                    issuesResultHistories.FromStatus = items.fromString;
-                    issuesResultHistories.ToStatus = items.toString;
-                }
+                //Create and build issues histories 
+                var issuesResultHistories = GetIssuesResultHistories(itemHistories, itemsStatus, isUseDateAfterReplanning, dateAfterReplanning, dateChangeStatusOld);
                 issuesResultHistories.StoryPoint = updateStoryPointFields ? itemIssues?.fields?.customfield_16701 : 0;
                 issuesResultHistories.StoryPointDone = updateStoryPointFields ? itemIssues?.fields?.customfield_16702 : 0;    
 
@@ -145,7 +174,33 @@ public class FormatterIssuesJira
 
                 issuesResult.IssuesResultHistories.Add(issuesResultHistories);
 
-                dateChangeStatusOld = dateChangeStatus.ToString(_FORMATDATE);
+                dateChangeStatusOld = !string.IsNullOrEmpty(issuesResultHistories.DateChangeStatus) ? issuesResultHistories.DateChangeStatus : string.Empty;
+
+                //If issues is open and last record so calculate cycletime it
+                if (itemIssuesLastChangelogHistories != null && itemIssuesLastChangelogHistories.toString == issuesResultHistories.ToStatus)
+                {
+                    dateFrom = Convert.ToDateTime(issuesResultHistories.DateChangeStatus);
+                    var issuesLastResultHistories = new IssuesResultHistories
+                    {
+
+                        UserKey = issuesResultHistories.UserKey,
+                        UserName = issuesResultHistories.UserName,
+
+                        DateChangeStatus = issuesResultHistories.DateChangeStatus,
+                        CycleTime = GetCycletime(dateFrom, DateTime.UtcNow),
+                        CycleTimeWorkDays = GetCycletime(dateFrom, DateTime.UtcNow, true),
+
+                        FromStatus = issuesResultHistories.ToStatus,
+                        ToStatus = issuesResultHistories.ToStatus,
+
+                        StoryPoint = issuesResultHistories.StoryPoint,
+                        StoryPointDone = issuesResultHistories.StoryPointDone    
+                    };
+                    issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTimeAfterReplanning;
+                    issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning;
+
+                    issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
+                }
             }
 
             issuesResultList.Add(issuesResult);
