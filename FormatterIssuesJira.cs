@@ -10,8 +10,20 @@ public class FormatterIssuesJira
     const string _DONE = "Finalizado";
     const string _FORMATDATE = "yyyy-MM-dd";
 
+    // Return expression issues that change status
+    Func<Items, bool> transictionStatus = x => x.field == _STATUS && x.fromString != x.toString;
+
+    // Return expression issues that change status diff done
+    Func<Items, bool> transictionStatusNoDone = x => x.field == _STATUS && x.fromString != x.toString && x.toString != _DONE;
+
+    // Return expression issues that change status diff backlog
+    Func<Items, bool> transictionStatusNoBacklog = x => x.field == _STATUS && x.fromString != _BACKLOG && x.fromString == x.toString;
+
+    // Return expression to sprints
+    Func<Items, bool> expressionSprints = x => x.field == _SPRINT && !string.IsNullOrEmpty(x.toString);
+
     // Return diff dates just work days
-    private static int GetWorkingDays(DateTime dateFrom, DateTime dateTo)
+    private int GetWorkingDays(DateTime dateFrom, DateTime dateTo)
     {
         var dayDifference = (int)dateTo.Subtract(dateFrom).TotalDays;
         return Enumerable
@@ -20,11 +32,17 @@ public class FormatterIssuesJira
             .Count(x => x.DayOfWeek != DayOfWeek.Saturday && x.DayOfWeek != DayOfWeek.Sunday);
     }
 
+    // Format datetime specifc kind
+    private DateTime GetDateTimeSpecificKind(string? dateToConvert)
+    {
+        return DateTime.SpecifyKind(Convert.ToDateTime(dateToConvert), DateTimeKind.Utc);
+    }
+
     // Return sprint list 
-    private static List<string> GetSprintsIssues(IOrderedEnumerable<Histories> itemIssuesChangelogHistories)
+    private List<string> GetSprintsIssues(IOrderedEnumerable<Histories> itemIssuesChangelogHistories)
     {
         var sprintList = new List<string>();
-        var itemIssuesChangelogHistoriesFiltered = itemIssuesChangelogHistories.Where(x => x.items.Any(x => x.field == _SPRINT && !string.IsNullOrEmpty(x.toString)));
+        var itemIssuesChangelogHistoriesFiltered = itemIssuesChangelogHistories.Where(x => x.items.Any(expressionSprints));
 
         itemIssuesChangelogHistoriesFiltered.ToList().ForEach(x =>
         {
@@ -38,8 +56,20 @@ public class FormatterIssuesJira
         return sprintList;
     }
 
+    // Return total sprints
+    private int GetTotalSprints(List<Issues> issues)
+    {
+        var sprintList = new List<string>();
+        issues.Select(x => x.changelog.histories.OrderBy(x => x.created)).ToList().ForEach(x => 
+        {
+            sprintList.AddRange(GetSprintsIssues(x));
+        });
+        
+        return sprintList.Distinct().Count();
+    }
+
     // Return CycleTime
-    private static int GetCycletime(DateTime dateFrom, DateTime dateTo, bool isWorkday = false)
+    private int GetCycletime(DateTime dateFrom, DateTime dateTo, bool isWorkday = false)
     {
         int cycleTime = 0;        
         if (dateFrom != DateTime.MinValue)
@@ -49,27 +79,27 @@ public class FormatterIssuesJira
     }
 
     // Return real date and status that issue developing in sprint
-    private static Tuple<DateTime?, string>? GetDateAndStatusAfterReplanning(IOrderedEnumerable<Histories> itemIssuesChangelogHistories, string replanning)
+    private Tuple<DateTime?, string>? GetDateAndStatusAfterReplanning(IOrderedEnumerable<Histories> itemIssuesChangelogHistories, string replanning)
     {
         if (replanning != _YES)
             return null;
 
-        var dateAndStatusReplanning = itemIssuesChangelogHistories.FirstOrDefault(x => x.items.Any(x => x.field == _STATUS && x.fromString != _BACKLOG && x.fromString == x.toString));
+        var dateAndStatusReplanning = itemIssuesChangelogHistories.FirstOrDefault(x => x.items.Any(transictionStatusNoBacklog));
 
         var dateReplanning = dateAndStatusReplanning?.created;
         var statusReplanning = dateAndStatusReplanning?.items.LastOrDefault()?.toString;
 
         return (!string.IsNullOrEmpty(dateReplanning) && !string.IsNullOrEmpty(statusReplanning)) ? 
-                        new Tuple<DateTime?, string>(DateTime.SpecifyKind(Convert.ToDateTime(dateReplanning), DateTimeKind.Utc), statusReplanning) 
+                        new Tuple<DateTime?, string>(GetDateTimeSpecificKind(dateReplanning), statusReplanning) 
                         : null;
     }
 
     //Create and build issues histories 
-    private static IssuesResultHistories GetIssuesResultHistories(Histories? itemHistories, IEnumerable<Items> itemsStatus, 
+    private IssuesResultHistories GetIssuesResultHistories(Histories? itemHistories, IEnumerable<Items> itemsStatus, 
             bool isUseDateAfterReplanning, DateTime? dateAfterReplanning, string? dateChangeStatusOld)
     {
         // Prepare dates to calculate cycletimes
-        var dateChangeStatus = DateTime.SpecifyKind(Convert.ToDateTime(itemHistories?.created), DateTimeKind.Utc);
+        var dateChangeStatus = GetDateTimeSpecificKind(itemHistories?.created);
         var dateFrom = (!string.IsNullOrEmpty(dateChangeStatusOld)) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
         var dateTo = Convert.ToDateTime(dateChangeStatus.ToString(_FORMATDATE));
 
@@ -106,6 +136,8 @@ public class FormatterIssuesJira
     {
         var issuesResultList = new List<IssuesResult>();  
     
+        var avgStoryPointDone = issuesJira.issues.Sum(x => x.fields.customfield_16702) / GetTotalSprints(issuesJira.issues);
+
         foreach(var itemIssues in issuesJira.issues.OrderBy(x => x.id))
         {
             bool updateStoryPointFields = true;
@@ -116,7 +148,8 @@ public class FormatterIssuesJira
                 Key = itemIssues?.key,
                 Summary = itemIssues?.fields?.summary,
                 Assigned = itemIssues?.fields?.assignee?.displayName,
-                DateResolved = DateTime.SpecifyKind(Convert.ToDateTime(itemIssues?.fields?.resolutiondate), DateTimeKind.Utc).ToString(_FORMATDATE)
+                DateResolved = GetDateTimeSpecificKind(itemIssues?.fields?.resolutiondate).ToString(_FORMATDATE),
+                AvgStoryPointDone = avgStoryPointDone
             };
 
             if (itemIssues == null)
@@ -147,18 +180,18 @@ public class FormatterIssuesJira
             string dateChangeStatusOld = string.Empty;
     
             // Get history status issue
-            var itemIssuesChangelogHistoriesFiltered = itemIssuesChangelogHistories.Where(x => x.items.Any(x => x.field == _STATUS && x.fromString != x.toString));
+            var itemIssuesChangelogHistoriesFiltered = itemIssuesChangelogHistories.Where(x => x.items.Any(transictionStatus));
             
             // Get last history status open issue
-            var itemIssuesLastChangelogHistories = itemIssuesChangelogHistoriesFiltered.LastOrDefault(x => x.items.Any(x => x.field == _STATUS && x.fromString != x.toString))?
-                    .items.LastOrDefault(y => y.field == _STATUS && y.fromString != y.toString && y.toString != _DONE);
+            var itemIssuesLastChangelogHistories = itemIssuesChangelogHistoriesFiltered.LastOrDefault(x => x.items.Any(transictionStatus))?
+                    .items.LastOrDefault(transictionStatusNoDone);
 
             // Build history status issue and cycletimes
             foreach (var itemHistories in itemIssuesChangelogHistoriesFiltered)
             {
 
                 //Get only items with status diff    
-                var itemsStatus = itemHistories?.items.Where(x => x.field == _STATUS && x.fromString != x.toString);
+                var itemsStatus = itemHistories?.items.Where(transictionStatus);
                 if (itemsStatus == null || itemsStatus.Count() == 0)
                     continue;
 
@@ -166,8 +199,11 @@ public class FormatterIssuesJira
 
                 //Create and build issues histories 
                 var issuesResultHistories = GetIssuesResultHistories(itemHistories, itemsStatus, isUseDateAfterReplanning, dateAfterReplanning, dateChangeStatusOld);
-                issuesResultHistories.StoryPoint = updateStoryPointFields ? itemIssues?.fields?.customfield_16701 : 0;
-                issuesResultHistories.StoryPointDone = updateStoryPointFields ? itemIssues?.fields?.customfield_16702 : 0;    
+                if (updateStoryPointFields)
+                {
+                    issuesResultHistories.StoryPoint = itemIssues?.fields?.customfield_16701;
+                    issuesResultHistories.StoryPointDone = itemIssues?.fields?.customfield_16702;    
+                }
 
                 isUseDateAfterReplanning = dateAfterReplanning.HasValue && issuesResultHistories.ToStatus == statusAfterReplanning && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
                 updateStoryPointFields = false;

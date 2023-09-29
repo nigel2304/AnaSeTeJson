@@ -71,6 +71,7 @@ public class IssuesJiraModel
         public string? Replanning { get; set; }
         public string? DateReplanning { get; set; }
         public string? DateResolved { get; set; }
+        public double? AvgStoryPointDone { get; set; } = 0;
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 
@@ -78,8 +79,8 @@ public class IssuesJiraModel
     {
         public string? UserKey { get; set; }
         public string? UserName { get; set; }
-       public double? StoryPoint { get; set; }
-        public double? StoryPointDone { get; set; }        
+       public double? StoryPoint { get; set; } = 0;
+        public double? StoryPointDone { get; set; } = 0;        
         public string? DateChangeStatus { get; set; }
         public int CycleTime { get; set; }
         public int CycleTimeWorkDays { get; set; }
