@@ -232,8 +232,8 @@ public class FormatterIssuesJira
                         StoryPoint = issuesResultHistories.StoryPoint,
                         StoryPointDone = issuesResultHistories.StoryPointDone    
                     };
-                    issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTimeAfterReplanning;
-                    issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning;
+                    issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTime;
+                    issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDays;
 
                     issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
                 }
