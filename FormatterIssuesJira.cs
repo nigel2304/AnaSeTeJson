@@ -94,7 +94,7 @@ public class FormatterIssuesJira
                         : null;
     }
 
-    //Create and build issues histories 
+    // Create and build issues histories 
     private IssuesResultHistories GetIssuesResultHistories(Histories? itemHistories, IEnumerable<Items> itemsStatus, 
             bool isUseDateAfterReplanning, DateTime? dateAfterReplanning, string? dateChangeStatusOld)
     {
@@ -106,7 +106,7 @@ public class FormatterIssuesJira
         var dateChangeStatusAfterReplanning = (isUseDateAfterReplanning && dateAfterReplanning.HasValue) ? dateAfterReplanning.Value : dateChangeStatus;
         var dateToAfterReplanning = Convert.ToDateTime(dateChangeStatusAfterReplanning.ToString(_FORMATDATE));
 
-        //Set object to issues history and calculate cycletimes
+        // Set object to issues history and calculate cycletimes
         var issuesResultHistories = new IssuesResultHistories
         {
 
@@ -190,14 +190,14 @@ public class FormatterIssuesJira
             foreach (var itemHistories in itemIssuesChangelogHistoriesFiltered)
             {
 
-                //Get only items with status diff    
+                // Get only items with status diff    
                 var itemsStatus = itemHistories?.items.Where(transictionStatus);
                 if (itemsStatus == null || itemsStatus.Count() == 0)
                     continue;
 
                 var dateFrom = !string.IsNullOrEmpty(dateChangeStatusOld) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
 
-                //Create and build issues histories 
+                // Create and build issues histories 
                 var issuesResultHistories = GetIssuesResultHistories(itemHistories, itemsStatus, isUseDateAfterReplanning, dateAfterReplanning, dateChangeStatusOld);
                 if (updateStoryPointFields)
                 {
@@ -212,7 +212,7 @@ public class FormatterIssuesJira
 
                 dateChangeStatusOld = !string.IsNullOrEmpty(issuesResultHistories.DateChangeStatus) ? issuesResultHistories.DateChangeStatus : string.Empty;
 
-                //If issues is open and last record so calculate cycletime it
+                // If issues is open and last record so calculate cycletime it
                 if (itemIssuesLastChangelogHistories != null && itemIssuesLastChangelogHistories.toString == issuesResultHistories.ToStatus)
                 {
                     dateFrom = Convert.ToDateTime(issuesResultHistories.DateChangeStatus);
