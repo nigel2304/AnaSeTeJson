@@ -211,33 +211,35 @@ public class FormatterIssuesJira
                 issuesResult.IssuesResultHistories.Add(issuesResultHistories);
 
                 dateChangeStatusOld = !string.IsNullOrEmpty(issuesResultHistories.DateChangeStatus) ? issuesResultHistories.DateChangeStatus : string.Empty;
-
-                // If issues is open and last record so calculate cycletime it
-                if (itemIssuesLastChangelogHistories != null && itemIssuesLastChangelogHistories.toString == issuesResultHistories.ToStatus)
-                {
-                    dateFrom = Convert.ToDateTime(issuesResultHistories.DateChangeStatus);
-                    var issuesLastResultHistories = new IssuesResultHistories
-                    {
-
-                        UserKey = issuesResultHistories.UserKey,
-                        UserName = issuesResultHistories.UserName,
-
-                        DateChangeStatus = issuesResultHistories.DateChangeStatus,
-                        CycleTime = GetCycletime(dateFrom, DateTime.UtcNow),
-                        CycleTimeWorkDays = GetCycletime(dateFrom, DateTime.UtcNow, true),
-
-                        FromStatus = issuesResultHistories.ToStatus,
-                        ToStatus = issuesResultHistories.ToStatus,
-
-                        StoryPoint = issuesResultHistories.StoryPoint,
-                        StoryPointDone = issuesResultHistories.StoryPointDone    
-                    };
-                    issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTime;
-                    issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDays;
-
-                    issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
-                }
             }
+
+            // If issues is open and last record so calculate cycletime it
+            var issuesResultHistoriesLast = issuesResult.IssuesResultHistories.LastOrDefault();
+            if (itemIssuesLastChangelogHistories != null && issuesResultHistoriesLast != null && itemIssuesLastChangelogHistories.toString == issuesResultHistoriesLast.ToStatus)
+            {
+                var dateFrom = Convert.ToDateTime(issuesResultHistoriesLast.DateChangeStatus);
+                var issuesLastResultHistories = new IssuesResultHistories
+                {
+
+                    UserKey = issuesResultHistoriesLast.UserKey,
+                    UserName = issuesResultHistoriesLast.UserName,
+
+                    DateChangeStatus = issuesResultHistoriesLast.DateChangeStatus,
+                    CycleTime = GetCycletime(dateFrom, DateTime.UtcNow),
+                    CycleTimeWorkDays = GetCycletime(dateFrom, DateTime.UtcNow, true),
+
+                    FromStatus = issuesResultHistoriesLast.ToStatus,
+                    ToStatus = issuesResultHistoriesLast.ToStatus,
+
+                    StoryPoint = issuesResultHistoriesLast.StoryPoint,
+                    StoryPointDone = issuesResultHistoriesLast.StoryPointDone
+                };
+                issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTime;
+                issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDays;
+
+                issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
+            }
+
 
             issuesResultList.Add(issuesResult);
         }
