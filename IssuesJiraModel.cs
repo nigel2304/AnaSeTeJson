@@ -18,6 +18,7 @@ public class IssuesJiraModel
         public string? summary { get; set; }
         public double? customfield_16701 { get; set; }
         public double? customfield_16702 { get; set; }
+        public string? customfield_10105 { get; set; }
         public string? resolutiondate { get; set; }
         public Assignee assignee { get; set; } = new Assignee();
     }
@@ -67,6 +68,9 @@ public class IssuesJiraModel
         public string? Summary { get; set; }
          public string? Assigned { get; set; }
         public string? Sprint { get; set; }
+        public string? StartDateSprint { get; set; }
+        public string? EndDateSprint { get; set; }
+        public string? AddAfterStartedSprint { get; set; }
         public string? HistorySprint { get; set; }
         public string? Replanning { get; set; }
         public string? DateReplanning { get; set; }

@@ -1,4 +1,5 @@
 ﻿using System.Data;
+using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Xml.Serialization;
@@ -14,6 +15,12 @@ namespace JiraConvertJsonTrasactionToXML
         {
             try
             {
+                const string _STARTFROMCUSTOMFIELD = "\"customfield_10105\": [\r\n";
+                const string _STARTTOCUSTOMFIELD = "\"customfield_10105\":";
+
+                const string _ENDFROMCUSTOMFIELD = "\r\n                ],\r\n                \"issuetype\"";
+                const string _ENDTOCUSTOMFIELD = ",\r\n                \"issuetype\"";
+
                 var baseDirecotry = AppDomain.CurrentDomain.BaseDirectory;
                 var fileNameSource = baseDirecotry + "SourceEstoriasJiraAPI.json";
                 var fileNameJsonClose = baseDirecotry + "EstoriasTransactionsFormatterJSON.json";
@@ -21,6 +28,7 @@ namespace JiraConvertJsonTrasactionToXML
 
                 Console.WriteLine("Carregando arquivo json de origem...");
                 Console.WriteLine();
+
                 var jsonString = File.ReadAllText(fileNameSource);
 
                 var jsonSerializerOptions = new JsonSerializerOptions
@@ -28,6 +36,8 @@ namespace JiraConvertJsonTrasactionToXML
                     Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
                     WriteIndented = true,
                 };
+
+                jsonString = jsonString.Replace(_STARTFROMCUSTOMFIELD, _STARTTOCUSTOMFIELD).Replace(_ENDFROMCUSTOMFIELD, _ENDTOCUSTOMFIELD);
 
                 var issuesJira = JsonConvert.DeserializeObject<IssuesJira>(jsonString);
 

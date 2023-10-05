@@ -7,8 +7,11 @@ public class FormatterIssuesJira
     const string _STATUS = "status";
     const string _SPRINT = "Sprint";
     const string _BACKLOG = "Backlog";
+    const string _PLANNED = "Planejado";
     const string _DONE = "Finalizado";
     const string _FORMATDATE = "yyyy-MM-dd";
+    const string _STARTDATE = "startDate=";
+    const string _ENDDATE = "endDate=";
 
     // Return expression issues that change status
     Func<Items, bool> transictionStatus = x => x.field == _STATUS && x.fromString != x.toString;
@@ -76,6 +79,23 @@ public class FormatterIssuesJira
             cycleTime = !isWorkday ? (int)dateTo.Subtract(dateFrom).TotalDays : GetWorkingDays(dateFrom, dateTo);
 
        return cycleTime;
+    }
+
+    // Return start date and end date sprint
+    private Tuple<string, string>? GetStartEndDateSprint(string? infoSprintJira)
+    {
+        if (string.IsNullOrEmpty(infoSprintJira))
+            return null;
+
+		var startSubstring = infoSprintJira.IndexOf(_STARTDATE) + _STARTDATE.Length;
+		
+		var startDate = infoSprintJira.Substring(startSubstring, 10);
+
+		startSubstring = infoSprintJira.IndexOf(_ENDDATE) + _ENDDATE.Length;
+		
+		var endDate = infoSprintJira.Substring(startSubstring, 10);
+
+        return new Tuple<string, string>(startDate, endDate);
     }
 
     // Return real date and status that issue developing in sprint
@@ -165,6 +185,11 @@ public class FormatterIssuesJira
                 issuesResult.HistorySprint = string.IsNullOrEmpty(issuesResult.HistorySprint) ? x : issuesResult.HistorySprint + " / " + x;
             });
 
+            // Get start and end date sprint
+            var startEndDateSprint = GetStartEndDateSprint(itemIssues?.fields?.customfield_10105);
+            issuesResult.StartDateSprint = GetDateTimeSpecificKind(startEndDateSprint?.Item1).ToString(_FORMATDATE);
+            issuesResult.EndDateSprint = GetDateTimeSpecificKind(startEndDateSprint?.Item2).ToString(_FORMATDATE);
+
             // Get date ans status replanning, otherwise real date and status issue devlop in sprint
             var dateAndStatusAfterReplanning = GetDateAndStatusAfterReplanning(itemIssuesChangelogHistories, issuesResult.Replanning);
             DateTime? dateAfterReplanning = null;
@@ -203,6 +228,13 @@ public class FormatterIssuesJira
                 {
                     issuesResultHistories.StoryPoint = itemIssues?.fields?.customfield_16701;
                     issuesResultHistories.StoryPointDone = itemIssues?.fields?.customfield_16702;    
+                }
+
+                // Check if issue was add in sprint after started it
+                if (issuesResultHistories.FromStatus ==_BACKLOG && issuesResultHistories.ToStatus ==_PLANNED)
+                {
+                    var dateStartSprintLessDateIssue = Convert.ToDateTime(issuesResult.StartDateSprint).CompareTo(Convert.ToDateTime(issuesResultHistories.DateChangeStatus)) < 0;
+                    issuesResult.AddAfterStartedSprint = dateStartSprintLessDateIssue ? _YES : _NO;
                 }
 
                 isUseDateAfterReplanning = dateAfterReplanning.HasValue && issuesResultHistories.ToStatus == statusAfterReplanning && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
