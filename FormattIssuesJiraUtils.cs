@@ -74,6 +74,8 @@ public class FormatterIssuesJiraUtis
 		var startSubstring = infoSprintJira.IndexOf(_START_DATE) + _START_DATE.Length;
 		
 		var startDate = infoSprintJira.Substring(startSubstring, 10);
+        var startDateTime = GetDateTimeSpecificKind(startDate);
+        startDate = GetStartDateTime(startDate);
 
 		startSubstring = infoSprintJira.IndexOf(_END_DATE) + _END_DATE.Length;
 		
@@ -135,4 +137,46 @@ public class FormatterIssuesJiraUtis
         return issuesResultHistories;
     }
 
+    private string GetStartDateTime(string startDate)
+    {
+        var startDateTime = GetDateTimeSpecificKind(startDate);
+
+        var year = startDateTime.Year;
+        var holidays = new List<DateTime>()
+        {
+            // New year
+            new DateTime(year, 1, 1),
+            // Carnival monday
+            new DateTime(year, 2, 12),
+            // Carnival tuesday
+            new DateTime(year, 2, 13),
+            // Passion Christ
+            new DateTime(year, 3, 29), 
+            // Tiradentes
+            new DateTime(year, 4, 21),
+            // Worker day
+            new DateTime(year, 5, 1),
+            // Corpus Christ
+            new DateTime(year, 5, 30),
+            // Independace day
+            new DateTime(year, 9, 7),
+            // Brazil patron saint
+            new DateTime(year, 10, 12),
+            // Dead day
+            new DateTime(year, 11, 2),
+            // Black consciousness day
+            new DateTime(year, 11, 20),
+            // Mary christmas
+            new DateTime(year, 12, 25)
+        };
+
+        // Check if start date sprint is holyday
+        if (holidays.IndexOf(startDateTime) != -1)
+        {
+            return startDateTime.AddDays(1).ToString(_FORMAT_DATE);
+
+        }
+            
+        return startDate;
+    }
 }
