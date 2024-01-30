@@ -50,7 +50,7 @@ public class FormatterIssuesJira
             issuesResult.StartDateSprint = formatterIssuesJiraUtis.GetDateTimeSpecificKind(startEndDateSprint?.Item1).ToString(_FORMAT_DATE);
             issuesResult.EndDateSprint = formatterIssuesJiraUtis.GetDateTimeSpecificKind(startEndDateSprint?.Item2).ToString(_FORMAT_DATE);
 
-            // Get date ans status replanning, otherwise real date and status issue devlop in sprint
+            // Get date and status replanning, otherwise real date and status issue develop in sprint
             var dateAndStatusAfterReplanning = formatterIssuesJiraUtis.GetDateAndStatusAfterReplanning(itemIssuesChangelogHistories, issuesResult.Replanning);
             DateTime? dateAfterReplanning = null;
             string statusAfterReplanning = string.Empty;
@@ -126,8 +126,9 @@ public class FormatterIssuesJira
                     StoryPoint = issuesResultHistoriesLast.StoryPoint,
                     StoryPointDone = issuesResultHistoriesLast.StoryPointDone
                 };
-                issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTime;
-                issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDays;
+                dateFrom = isUseDateAfterReplanning && dateAfterReplanning.HasValue ? dateAfterReplanning.Value : Convert.ToDateTime(issuesResultHistoriesLast.DateChangeStatus);
+                issuesLastResultHistories.CycleTimeAfterReplanning = formatterIssuesJiraUtis.GetCycletime(dateFrom, DateTime.UtcNow);
+                issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = formatterIssuesJiraUtis.GetCycletime(dateFrom, DateTime.UtcNow, true);
 
                 issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
             }
