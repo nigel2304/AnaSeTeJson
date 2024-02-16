@@ -66,22 +66,21 @@ public class FormatterIssuesJiraUtis
     }
 
     // Return start date and end date sprint
-    public Tuple<string, string>? GetStartEndDateSprint(string? infoSprintJira)
+    public Tuple<string, string, string>? GetStartEndDateSprint(string? infoSprintJira)
     {
         if (string.IsNullOrEmpty(infoSprintJira))
             return null;
 
 		var startSubstring = infoSprintJira.IndexOf(_START_DATE) + _START_DATE.Length;
 		
-		var startDate = infoSprintJira.Substring(startSubstring, 10);
-        var startDateTime = GetDateTimeSpecificKind(startDate);
-        startDate = GetStartDateTime(startDate);
+		var startRealDate = infoSprintJira.Substring(startSubstring, 10);
+        var startDate = GetStartDateTime(startRealDate);
 
 		startSubstring = infoSprintJira.IndexOf(_END_DATE) + _END_DATE.Length;
 		
 		var endDate = infoSprintJira.Substring(startSubstring, 10);
 
-        return new Tuple<string, string>(startDate, endDate);
+        return Tuple.Create(startDate, endDate, startRealDate);
     }
 
     // Return real date and status that issue developing in sprint
@@ -102,10 +101,10 @@ public class FormatterIssuesJiraUtis
 
     // Create and build issues histories 
     public IssuesResultHistories GetIssuesResultHistories(Histories? itemHistories, IEnumerable<Items> itemsStatus, 
-            bool isUseDateAfterReplanning, DateTime? dateAfterReplanning, string? dateChangeStatusOld)
+            bool isUseDateAfterReplanning, DateTime? dateAfterReplanning, string? dateChangeStatusOld, string? startDateSprint, string replanning)
     {
         // Prepare dates to calculate cycletimes
-        var dateChangeStatus = GetDateTimeSpecificKind(itemHistories?.created);
+        var dateChangeStatus = DateChangeStatus(replanning, itemHistories?.created, startDateSprint);
         var dateFrom = (!string.IsNullOrEmpty(dateChangeStatusOld)) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
         var dateTo = Convert.ToDateTime(dateChangeStatus.ToString(_FORMAT_DATE));
 
@@ -137,6 +136,7 @@ public class FormatterIssuesJiraUtis
         return issuesResultHistories;
     }
 
+    //Return real start datetime discount holidays
     private string GetStartDateTime(string startDate)
     {
         var startDateTime = GetDateTimeSpecificKind(startDate);
@@ -173,10 +173,22 @@ public class FormatterIssuesJiraUtis
         // Check if start date sprint is holyday
         if (holidays.IndexOf(startDateTime) != -1)
         {
-            return startDateTime.AddDays(1).ToString(_FORMAT_DATE);
-
+            var incDay = startDateTime.CompareTo(holidays[1]) == 0 ? 2 : 1;
+            return startDateTime.AddDays(incDay).ToString(_FORMAT_DATE);
         }
             
         return startDate;
+    }
+
+    //Return date change status
+    private DateTime DateChangeStatus(string? replanning, string? dateChange, string? startDateSprint)
+    {
+        if (replanning == _YES)
+            return GetDateTimeSpecificKind(dateChange);
+
+        var dateTimeChange = GetDateTimeSpecificKind(dateChange);
+        var dateTimeStartSprint = GetDateTimeSpecificKind(startDateSprint);                    
+
+        return dateTimeChange.CompareTo(dateTimeStartSprint) < 0 ? dateTimeStartSprint : dateTimeChange;
     }
 }

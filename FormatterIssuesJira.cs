@@ -83,7 +83,7 @@ public class FormatterIssuesJira
                 var dateFrom = !string.IsNullOrEmpty(dateChangeStatusOld) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
 
                 // Create and build issues histories 
-                var issuesResultHistories = formatterIssuesJiraUtis.GetIssuesResultHistories(itemHistories, itemsStatus, isUseDateAfterReplanning, dateAfterReplanning, dateChangeStatusOld);
+                var issuesResultHistories = formatterIssuesJiraUtis.GetIssuesResultHistories(itemHistories, itemsStatus, isUseDateAfterReplanning, dateAfterReplanning, dateChangeStatusOld, issuesResult.StartDateSprint, issuesResult.Replanning);
                 if (updateStoryPointFields)
                 {
                     issuesResultHistories.StoryPoint = itemIssues?.fields?.customfield_16701;
