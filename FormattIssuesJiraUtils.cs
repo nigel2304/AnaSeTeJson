@@ -66,7 +66,7 @@ public class FormatterIssuesJiraUtis
     }
 
     // Return start date and end date sprint
-    public Tuple<string, string, string>? GetStartEndDateSprint(string? infoSprintJira)
+    public Tuple<string, string>? GetStartEndDateSprint(string? infoSprintJira)
     {
         if (string.IsNullOrEmpty(infoSprintJira))
             return null;
@@ -80,7 +80,7 @@ public class FormatterIssuesJiraUtis
 		
 		var endDate = infoSprintJira.Substring(startSubstring, 10);
 
-        return Tuple.Create(startDate, endDate, startRealDate);
+        return Tuple.Create(startDate, endDate);
     }
 
     // Return real date and status that issue developing in sprint
@@ -126,6 +126,7 @@ public class FormatterIssuesJiraUtis
             CycleTimeWorkDaysAfterReplanning = GetCycletime(dateFrom, dateToAfterReplanning, true),
 
         };
+        issuesResultHistories.CycleTimeEqualCycleTimeAfterReplanning = issuesResultHistories.CycleTime.CompareTo(issuesResultHistories.CycleTimeAfterReplanning) == 0 ? _YES : _NO;
 
         foreach (var items in itemsStatus)
         {

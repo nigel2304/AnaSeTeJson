@@ -83,13 +83,14 @@ public class IssuesJiraModel
     {
         public string? UserKey { get; set; }
         public string? UserName { get; set; }
-       public double? StoryPoint { get; set; } = 0;
+        public double? StoryPoint { get; set; } = 0;
         public double? StoryPointDone { get; set; } = 0;        
         public string? DateChangeStatus { get; set; }
         public int CycleTime { get; set; }
         public int CycleTimeWorkDays { get; set; }
         public int CycleTimeAfterReplanning { get; set; }
         public int CycleTimeWorkDaysAfterReplanning { get; set; }
+        public string? CycleTimeEqualCycleTimeAfterReplanning { get; set; }
         public string? FromStatus { get; set; }
         public string? ToStatus { get; set; }
     }
