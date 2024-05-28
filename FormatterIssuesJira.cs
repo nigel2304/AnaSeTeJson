@@ -91,7 +91,7 @@ public class FormatterIssuesJira
                 }
 
                 // Check if issue was add in sprint after started it
-                if (issuesResultHistories.FromStatus ==_BACKLOG && issuesResultHistories.ToStatus ==_PLANNED)
+                if (Convert.ToDateTime(issuesResult.StartDateSprint) != DateTime.MinValue && issuesResultHistories.FromStatus ==_BACKLOG && issuesResultHistories.ToStatus ==_PLANNED)
                 {
                     var dateStartSprintLessDateIssue = Convert.ToDateTime(issuesResult.StartDateSprint).CompareTo(Convert.ToDateTime(issuesResultHistories.DateChangeStatus)) < 0; 
                     issuesResult.AddAfterStartedSprint = dateStartSprintLessDateIssue ? _YES : _NO;
