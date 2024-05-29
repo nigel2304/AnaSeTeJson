@@ -75,7 +75,6 @@ public class IssuesJiraModel
         public string? Replanning { get; set; }
         public string? DateReplanning { get; set; }
         public string? DateResolved { get; set; }
-        public double? AvgStoryPointDone { get; set; } = 0;
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 

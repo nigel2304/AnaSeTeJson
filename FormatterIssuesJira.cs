@@ -16,8 +16,6 @@ public class FormatterIssuesJira
 
         var issuesResultList = new List<IssuesResult>();  
     
-        var avgStoryPointDone = issuesJira.issues.Sum(x => x.fields.customfield_16702) / formatterIssuesJiraUtis.GetTotalSprints(issuesJira.issues);
-
         foreach(var itemIssues in issuesJira.issues.OrderBy(x => x.id))
         {
             bool updateStoryPointFields = true;
@@ -28,8 +26,7 @@ public class FormatterIssuesJira
                 Key = itemIssues?.key,
                 Summary = itemIssues?.fields?.summary,
                 Assigned = itemIssues?.fields?.assignee?.displayName,
-                DateResolved = formatterIssuesJiraUtis.GetDateTimeSpecificKind(itemIssues?.fields?.resolutiondate).ToString(_FORMAT_DATE),
-                AvgStoryPointDone = avgStoryPointDone
+                DateResolved = formatterIssuesJiraUtis.GetDateTimeSpecificKind(itemIssues?.fields?.resolutiondate).ToString(_FORMAT_DATE)
             };
 
             if (itemIssues == null)
