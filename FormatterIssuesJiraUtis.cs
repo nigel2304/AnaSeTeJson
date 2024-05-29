@@ -180,4 +180,10 @@ public class FormatterIssuesJiraUtis
 
         return dateTimeChange.CompareTo(dateTimeStartSprint) < 0 ? dateTimeStartSprint : dateTimeChange;
     }
+
+       //Return date change status
+    public bool DateTimeIsMinValue(DateTime dateTimeCheck)
+    {
+        return dateTimeCheck.CompareTo(DateTime.MinValue) == 0;
+    }
 }

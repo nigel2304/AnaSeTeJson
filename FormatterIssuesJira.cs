@@ -9,6 +9,9 @@ public class FormatterIssuesJira
     // Return expression issues that change status diff done
     Func<Items, bool> transictionStatusNoDone = x => x.field == _STATUS && x.fromString != x.toString && x.toString != _DONE;
 
+    // Return has story points done
+    Func<IssuesResultHistories, bool> expressionHasStoryPointsDone = x => x.StoryPointDone.HasValue && x.StoryPointDone.Value > 0;
+
      // Build object with history status
     public List<IssuesResult> GetIssuesResult(IssuesJira issuesJira)
     {
@@ -88,7 +91,7 @@ public class FormatterIssuesJira
                 }
 
                 // Check if issue was add in sprint after started it
-                if (Convert.ToDateTime(issuesResult.StartDateSprint) != DateTime.MinValue && issuesResultHistories.FromStatus ==_BACKLOG && issuesResultHistories.ToStatus ==_PLANNED)
+                if (!formatterIssuesJiraUtis.DateTimeIsMinValue(Convert.ToDateTime(issuesResult.StartDateSprint)) && issuesResultHistories.FromStatus ==_BACKLOG && issuesResultHistories.ToStatus ==_PLANNED)
                 {
                     var dateStartSprintLessDateIssue = Convert.ToDateTime(issuesResult.StartDateSprint).CompareTo(Convert.ToDateTime(issuesResultHistories.DateChangeStatus)) < 0; 
                     issuesResult.AddAfterStartedSprint = dateStartSprintLessDateIssue ? _YES : _NO;
@@ -128,6 +131,12 @@ public class FormatterIssuesJira
                 issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = formatterIssuesJiraUtis.GetCycletime(dateFrom, DateTime.UtcNow, true);
 
                 issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
+            }
+
+            // Check if issue has story point done but hasn't date resolved and set it
+            if (formatterIssuesJiraUtis.DateTimeIsMinValue(Convert.ToDateTime(issuesResult.DateResolved)) && issuesResult.IssuesResultHistories.Any(expressionHasStoryPointsDone))
+            {
+                issuesResult.DateResolved = issuesResult.IssuesResultHistories?.LastOrDefault()?.DateChangeStatus;
             }
 
 
