@@ -34,9 +34,10 @@ public class FormatterIssuesJiraUtis
         itemIssuesChangelogHistoriesFiltered.ToList().ForEach(x =>
         {
             var sprintIssue = x.items.FirstOrDefault(x => x.field == _SPRINT && !string.IsNullOrEmpty(x.toString));
-            var sprintName = sprintIssue?.toString;
+            
+            var sprintName = FormatSprintName(sprintIssue?.toString);
             if (!string.IsNullOrEmpty(sprintName) && sprintList.IndexOf(sprintName) == -1)   
-                sprintList.Add(FormatSprintName(sprintName));
+                sprintList.Add(sprintName);
 
         });
 
@@ -188,9 +189,9 @@ public class FormatterIssuesJiraUtis
     }
 
     //Format and return sprint name
-    public string FormatSprintName(string sourceSprintName)
+    public string? FormatSprintName(string? sourceSprintName)
     {
-        var sprintNewName = sourceSprintName.Replace(_WORDNICHO, string.Empty);
+        var sprintNewName = sourceSprintName?.Replace(_WORDNICHO, string.Empty);
         var sprintNameLessTen = new List<string>()
         {
             "Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4", "Sprint 5", 
@@ -198,7 +199,7 @@ public class FormatterIssuesJiraUtis
         };
 
         // Check if sprint less ten
-        if (sprintNameLessTen.IndexOf(sprintNewName) != -1)
+        if (!string.IsNullOrEmpty(sprintNewName) && sprintNameLessTen.IndexOf(sprintNewName) != -1)
         {
             var numberSprint = sprintNewName.Substring(sprintNewName.Length - 1);
             sprintNewName = sprintNewName.Replace(numberSprint, string.Concat("0", numberSprint));
