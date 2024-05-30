@@ -28,7 +28,7 @@ public class FormatterIssuesJira
                 Id = itemIssues?.id,
                 Key = itemIssues?.key,
                 Summary = itemIssues?.fields?.summary,
-                Assigned = itemIssues?.fields?.assignee?.displayName,
+                Assigned = itemIssues?.fields?.assignee?.displayName?.Replace(_WORDPRESTSERV, string.Empty),
                 DateResolved = formatterIssuesJiraUtis.GetDateTimeSpecificKind(itemIssues?.fields?.resolutiondate).ToString(_FORMAT_DATE)
             };
 

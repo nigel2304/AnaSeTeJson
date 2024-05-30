@@ -36,7 +36,7 @@ public class FormatterIssuesJiraUtis
             var sprintIssue = x.items.FirstOrDefault(x => x.field == _SPRINT && !string.IsNullOrEmpty(x.toString));
             var sprintName = sprintIssue?.toString;
             if (!string.IsNullOrEmpty(sprintName) && sprintList.IndexOf(sprintName) == -1)   
-                sprintList.Add(sprintName);
+                sprintList.Add(FormatSprintName(sprintName));
 
         });
 
@@ -186,4 +186,25 @@ public class FormatterIssuesJiraUtis
     {
         return dateTimeCheck.CompareTo(DateTime.MinValue) == 0;
     }
+
+    //Format and return sprint name
+    public string FormatSprintName(string sourceSprintName)
+    {
+        var sprintNewName = sourceSprintName.Replace(_WORDNICHO, string.Empty);
+        var sprintNameLessTen = new List<string>()
+        {
+            "Sprint 1", "Sprint 2", "Sprint 3", "Sprint 4", "Sprint 5", 
+            "Sprint 6", "Sprint 7", "Sprint 8", "Sprint 9"
+        };
+
+        // Check if sprint less ten
+        if (sprintNameLessTen.IndexOf(sprintNewName) != -1)
+        {
+            var numberSprint = sprintNewName.Substring(sprintNewName.Length - 1);
+            sprintNewName = sprintNewName.Replace(numberSprint, string.Concat("0", numberSprint));
+        }
+            
+        return sprintNewName;
+    }
+
 }

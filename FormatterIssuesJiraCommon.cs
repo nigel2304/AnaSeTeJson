@@ -19,5 +19,6 @@ public static class FormatterIssuesJiraCommon
     public const string _SAVING_JSON_XML_FILE_HISTORY_ISSUES = "Salvando arquivos json/xml com históricos de estórias formatadas...";
     public const string _FILES_READY_TO_USE_PRESS_ANY_TYPE_EXIT = "Seus arquivos estão pronto para uso, pressione qualquer tecla para sair do app!!!";
     public const string _OBJECT_IS_NULL = "Objects is null";
-
+    public const string _WORDNICHO = "NICHO ";
+    public const string _WORDPRESTSERV = " - PrestServ";
 }
