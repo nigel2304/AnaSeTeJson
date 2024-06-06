@@ -97,8 +97,14 @@ public class FormatterIssuesJiraUtis
         var dateFrom = (!string.IsNullOrEmpty(dateChangeStatusOld)) ? Convert.ToDateTime(dateChangeStatusOld) : DateTime.MinValue;
         var dateTo = Convert.ToDateTime(dateChangeStatus.ToString(_FORMAT_DATE));
 
-        var dateChangeStatusAfterReplanning = (isUseDateAfterReplanning && dateAfterReplanning.HasValue) ? dateAfterReplanning.Value : dateChangeStatus;
-        var dateToAfterReplanning = Convert.ToDateTime(dateChangeStatusAfterReplanning.ToString(_FORMAT_DATE));
+        // Calculate amount days issues has days stoped
+        var daysIssueReplannedStoped = 0;
+        var workDaysIssueReplannedStoped = 0;
+        if (isUseDateAfterReplanning && dateAfterReplanning.HasValue)
+        {
+            daysIssueReplannedStoped = GetCycletime(dateAfterReplanning.Value, Convert.ToDateTime(dateChangeStatus));
+            workDaysIssueReplannedStoped = GetCycletime(dateAfterReplanning.Value, Convert.ToDateTime(dateChangeStatus), true);
+        }
 
         // Set object to issues history and calculate cycletimes
         var issuesResultHistories = new IssuesResultHistories
@@ -111,10 +117,9 @@ public class FormatterIssuesJiraUtis
             CycleTime = GetCycletime(dateFrom, dateTo),
             CycleTimeWorkDays = GetCycletime(dateFrom, dateTo, true),
 
-            CycleTimeAfterReplanning = GetCycletime(dateFrom, dateToAfterReplanning),
-            CycleTimeWorkDaysAfterReplanning = GetCycletime(dateFrom, dateToAfterReplanning, true),
-
         };
+        issuesResultHistories.CycleTimeAfterReplanning = issuesResultHistories.CycleTime - daysIssueReplannedStoped;
+        issuesResultHistories.CycleTimeWorkDaysAfterReplanning = issuesResultHistories.CycleTimeWorkDays - workDaysIssueReplannedStoped;
         issuesResultHistories.CycleTimeEqualCycleTimeAfterReplanning = issuesResultHistories.CycleTime.CompareTo(issuesResultHistories.CycleTimeAfterReplanning) == 0 ? _YES : _NO;
 
         foreach (var items in itemsStatus)

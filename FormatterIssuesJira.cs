@@ -71,6 +71,9 @@ public class FormatterIssuesJira
             var itemIssuesLastChangelogHistories = itemIssuesChangelogHistoriesFiltered.LastOrDefault(x => x.items.Any(transictionStatus))?
                     .items.LastOrDefault(transictionStatusNoDone);
 
+            // Get last id history status issues replanning
+            var idLastHistoryIssueReplanned = itemIssuesChangelogHistoriesFiltered.LastOrDefault(x => x.items.Any(x => x.toString == statusAfterReplanning))?.id;
+
             // Build history status issue and cycletimes
             foreach (var itemHistories in itemIssuesChangelogHistoriesFiltered)
             {
@@ -97,7 +100,7 @@ public class FormatterIssuesJira
                     issuesResult.AddAfterStartedSprint = dateStartSprintLessDateIssue ? _YES : _NO;
                 }
 
-                isUseDateAfterReplanning = dateAfterReplanning.HasValue && issuesResultHistories.ToStatus == statusAfterReplanning && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
+                isUseDateAfterReplanning = dateAfterReplanning.HasValue && itemHistories?.id == idLastHistoryIssueReplanned && issuesResultHistories.ToStatus == statusAfterReplanning; // && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
                 updateStoryPointFields = false;
 
                 issuesResult.IssuesResultHistories.Add(issuesResultHistories);
@@ -126,9 +129,17 @@ public class FormatterIssuesJira
                     StoryPoint = issuesResultHistoriesLast.StoryPoint,
                     StoryPointDone = issuesResultHistoriesLast.StoryPointDone
                 };
-                dateFrom = isUseDateAfterReplanning && dateAfterReplanning.HasValue ? dateAfterReplanning.Value : Convert.ToDateTime(issuesResultHistoriesLast.DateChangeStatus);
-                issuesLastResultHistories.CycleTimeAfterReplanning = formatterIssuesJiraUtis.GetCycletime(dateFrom, DateTime.UtcNow);
-                issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = formatterIssuesJiraUtis.GetCycletime(dateFrom, DateTime.UtcNow, true);
+
+                // Calculate amount days issues has days stoped
+                var daysIssueReplannedStoped = 0;
+                var workDaysIssueReplannedStoped = 0;
+                if (isUseDateAfterReplanning && dateAfterReplanning.HasValue)
+                {
+                    daysIssueReplannedStoped = formatterIssuesJiraUtis.GetCycletime(dateAfterReplanning.Value,  DateTime.UtcNow);
+                    workDaysIssueReplannedStoped = formatterIssuesJiraUtis.GetCycletime(dateAfterReplanning.Value,  DateTime.UtcNow, true);
+                }
+                issuesLastResultHistories.CycleTimeAfterReplanning = issuesLastResultHistories.CycleTime - daysIssueReplannedStoped;
+                issuesLastResultHistories.CycleTimeWorkDaysAfterReplanning = issuesLastResultHistories.CycleTimeWorkDays - workDaysIssueReplannedStoped;
 
                 issuesResult.IssuesResultHistories.Add(issuesLastResultHistories);
             }
