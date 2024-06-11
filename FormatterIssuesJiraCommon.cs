@@ -12,8 +12,8 @@ public static class FormatterIssuesJiraCommon
     public const string _END_DATE = "endDate=";
     public const string _START_FROM_CUSTOM_FIELD = "\"customfield_10105\": [\r\n";
     public const string _START_TO_CUSTOM_FIELD = "\"customfield_10105\":";
-    public const string _END_FROM_CUSTOM_FIELD = "\r\n                ],\r\n                \"resolutiondate\"";
-    public const string _END_TO_CUSTOM_FIELD = ",\r\n                \"resolutiondate\"";
+    public const string _END_FROM_CUSTOM_FIELD = "autoStartStop=false]\"\r\n                ]";
+    public const string _END_TO_CUSTOM_FIELD = "autoStartStop=false]\"";
     public const string _LOADING_SOURCE_JSON = "Carregando arquivo json de origem...";
     public const string _PREPARE_HISTORY_ISSUES = "Preparando históricos das estórias...";
     public const string _SAVING_JSON_XML_FILE_HISTORY_ISSUES = "Salvando arquivos json/xml com históricos de estórias formatadas...";

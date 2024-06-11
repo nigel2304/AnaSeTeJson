@@ -33,6 +33,8 @@ namespace JiraConvertJsonTrasactionToXML
 
                 jsonString = jsonString.Replace(_START_FROM_CUSTOM_FIELD, _START_TO_CUSTOM_FIELD).Replace(_END_FROM_CUSTOM_FIELD, _END_TO_CUSTOM_FIELD);
 
+                //jsonString = jsonString.Replace(_START_FROM_CUSTOM_FIELD, _START_TO_CUSTOM_FIELD).Replace("autoStartStop=false]\"\r\n                ]", "autoStartStop=false]\"");   
+
                 var issuesJira = JsonConvert.DeserializeObject<IssuesJira>(jsonString);
 
                 if (issuesJira == null || issuesJira.issues == null)
