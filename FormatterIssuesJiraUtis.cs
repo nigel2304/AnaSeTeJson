@@ -120,7 +120,6 @@ public class FormatterIssuesJiraUtis
         };
         issuesResultHistories.CycleTimeAfterReplanning = issuesResultHistories.CycleTime - daysIssueReplannedStoped;
         issuesResultHistories.CycleTimeWorkDaysAfterReplanning = issuesResultHistories.CycleTimeWorkDays - workDaysIssueReplannedStoped;
-        issuesResultHistories.CycleTimeEqualCycleTimeAfterReplanning = issuesResultHistories.CycleTime.CompareTo(issuesResultHistories.CycleTimeAfterReplanning) == 0 ? _YES : _NO;
 
         foreach (var items in itemsStatus)
         {

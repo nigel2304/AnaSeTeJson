@@ -75,6 +75,7 @@ public class IssuesJiraModel
         public string? Replanning { get; set; }
         public string? DateReplanning { get; set; }
         public string? DateResolved { get; set; }
+        public string? CycleTimeEqualCycleTimeAfterReplanning { get; set; }
         public List<IssuesResultHistories> IssuesResultHistories { get; set; } = new List<IssuesResultHistories>();
     }
 
@@ -89,7 +90,6 @@ public class IssuesJiraModel
         public int CycleTimeWorkDays { get; set; }
         public int CycleTimeAfterReplanning { get; set; }
         public int CycleTimeWorkDaysAfterReplanning { get; set; }
-        public string? CycleTimeEqualCycleTimeAfterReplanning { get; set; }
         public string? FromStatus { get; set; }
         public string? ToStatus { get; set; }
     }

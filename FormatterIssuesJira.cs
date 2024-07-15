@@ -150,6 +150,12 @@ public class FormatterIssuesJira
                 issuesResult.DateResolved = issuesResult.IssuesResultHistories?.LastOrDefault()?.DateChangeStatus;
             }
 
+            var sumLeadTime = issuesResult?.IssuesResultHistories?.Sum(x => x.CycleTime);
+            var sumLeadTimeAfterReplanning = issuesResult?.IssuesResultHistories?.Sum(x => x.CycleTimeAfterReplanning);
+
+#pragma warning disable CS8602 // Dereference of a possibly null reference.
+            issuesResult.CycleTimeEqualCycleTimeAfterReplanning = sumLeadTime.HasValue && sumLeadTimeAfterReplanning.HasValue ? sumLeadTime.Value.CompareTo(sumLeadTimeAfterReplanning.Value) == 0 ? _YES : _NO : _YES;
+#pragma warning restore CS8602 // Dereference of a possibly null reference.
 
             issuesResultList.Add(issuesResult);
         }
