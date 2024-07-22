@@ -126,8 +126,8 @@ public class FormatterIssuesJira
                     FromStatus = issuesResultHistoriesLast.ToStatus,
                     ToStatus = issuesResultHistoriesLast.ToStatus,
 
-                    StoryPoint = issuesResultHistoriesLast.StoryPoint,
-                    StoryPointDone = issuesResultHistoriesLast.StoryPointDone
+                    StoryPoint = 0,
+                    StoryPointDone = 0
                 };
 
                 // Calculate amount days issues has days stoped
