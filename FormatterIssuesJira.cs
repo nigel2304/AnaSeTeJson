@@ -100,7 +100,7 @@ public class FormatterIssuesJira
                     issuesResult.AddAfterStartedSprint = dateStartSprintLessDateIssue ? _YES : _NO;
                 }
 
-                isUseDateAfterReplanning = dateAfterReplanning.HasValue && itemHistories?.id == idLastHistoryIssueReplanned && issuesResultHistories.ToStatus == statusAfterReplanning; // && DateTime.Compare(dateFrom, dateAfterReplanning.Value) < 0;
+                isUseDateAfterReplanning = dateAfterReplanning.HasValue && itemHistories?.id == idLastHistoryIssueReplanned && issuesResultHistories.ToStatus == statusAfterReplanning;
                 updateStoryPointFields = false;
 
                 issuesResult.IssuesResultHistories.Add(issuesResultHistories);
