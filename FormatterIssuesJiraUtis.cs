@@ -78,10 +78,10 @@ public class FormatterIssuesJiraUtis
         if (replanning != _YES)
             return null;
 
-        var dateAndStatusReplanning = itemIssuesChangelogHistories.FirstOrDefault(x => x.items.Any(transictionStatusNoBacklog));
+        var historiesReplanning = itemIssuesChangelogHistories.FirstOrDefault(x => x.items.Any(transictionStatusNoBacklog));
+        var statusReplanning = historiesReplanning?.items.LastOrDefault(transictionStatusNoBacklog)?.toString;
 
-        var dateReplanning = dateAndStatusReplanning?.created;
-        var statusReplanning = dateAndStatusReplanning?.items.LastOrDefault()?.toString;
+        var dateReplanning = historiesReplanning?.created;
 
         return (!string.IsNullOrEmpty(dateReplanning) && !string.IsNullOrEmpty(statusReplanning)) ? 
                         new Tuple<DateTime?, string>(GetDateTimeSpecificKind(dateReplanning), statusReplanning) 
